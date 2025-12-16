@@ -2,6 +2,16 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { useSystemStore } from '@/store/useSystemStore';
+import MenuDropdown from './MenuDropdown';
+
+interface MenuItem {
+  label: string;
+  icon?: React.ReactNode;
+  onClick?: () => void;
+  disabled?: boolean;
+  separator?: boolean;
+  submenu?: MenuItem[];
+}
 import {
   BatteryFull,
   Battery,
@@ -29,7 +39,6 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import ControlCenter from './ControlCenter';
-import MenuDropdown from './MenuDropdown';
 import AboutThisMac from './AboutThisMac';
 import Toast from './Toast';
 import DynamicIsland from './DynamicIsland';
@@ -103,7 +112,7 @@ export default function MenuBar() {
     shutDown();
   };
 
-  const appleMenuItems = [
+  const appleMenuItems: MenuItem[] = [
     {
       label: 'About This Mac',
       onClick: () => {
@@ -111,7 +120,7 @@ export default function MenuBar() {
         setAppleMenuOpen(false);
       },
     },
-    { separator: true },
+    { separator: true, label: '' },
     {
       label: 'Sleep',
       icon: <Moon size={14} />,
@@ -171,7 +180,7 @@ export default function MenuBar() {
     setFileMenuOpen(false);
   };
 
-  const fileMenuItems = [
+  const fileMenuItems: MenuItem[] = [
     {
       label: 'New Window',
       icon: <FolderPlus size={14} />,
@@ -184,7 +193,7 @@ export default function MenuBar() {
         setFileMenuOpen(false);
       },
     },
-    { separator: true },
+    { separator: true, label: "" },
     {
       label: 'Close Window',
       onClick: handleCloseWindow,
@@ -285,7 +294,7 @@ export default function MenuBar() {
     setEditMenuOpen(false);
   };
 
-  const editMenuItems = [
+  const editMenuItems: MenuItem[] = [
     {
       label: 'Undo',
       onClick: () => {
@@ -302,7 +311,7 @@ export default function MenuBar() {
         setEditMenuOpen(false);
       },
     },
-    { separator: true },
+    { separator: true, label: "" },
     {
       label: 'Cut',
       icon: <Scissors size={14} />,
@@ -320,7 +329,7 @@ export default function MenuBar() {
     },
   ];
 
-  const viewMenuItems = [
+  const viewMenuItems: MenuItem[] = [
     {
       label: 'Show View Options',
       onClick: () => {
@@ -328,7 +337,7 @@ export default function MenuBar() {
         setViewMenuOpen(false);
       },
     },
-    { separator: true },
+    { separator: true, label: "" },
     {
       label: viewOptions.showToolbar ? 'Hide Toolbar' : 'Show Toolbar',
       icon: viewOptions.showToolbar ? <EyeOff size={14} /> : <Eye size={14} />,
@@ -482,7 +491,7 @@ export default function MenuBar() {
                       setWindowMenuOpen(false);
                     },
                   },
-                  { separator: true },
+                  { separator: true, label: "" },
                   {
                     label: 'Bring All to Front',
                     onClick: () => {
@@ -495,7 +504,7 @@ export default function MenuBar() {
                       setWindowMenuOpen(false);
                     },
                   },
-                  { separator: true },
+                  { separator: true, label: "" },
                   {
                     label: 'Close All',
                     icon: <X size={14} />,
@@ -527,7 +536,7 @@ export default function MenuBar() {
                       setHelpMenuOpen(false);
                     },
                   },
-                  { separator: true },
+                  { separator: true, label: "" },
                   {
                     label: 'Kısayollar',
                     onClick: () => {

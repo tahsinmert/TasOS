@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useSystemStore } from '@/store/useSystemStore';
 
@@ -79,6 +79,55 @@ export default function AIAssistantOrb() {
     }
   }, [position]);
 
+  const handleVoiceCommand = useCallback((command: string) => {
+    console.log('Voice command received:', command);
+
+    // Open Safari
+    if (command.includes('open safari')) {
+      const safariExists = windows.some((w) => w.id === 'safari');
+      if (!safariExists) {
+        addWindow({
+          id: 'safari',
+          title: 'Safari',
+          position: { x: 100, y: 100 },
+          size: { width: 1200, height: 800 },
+        });
+      }
+      setIsExpanded(false);
+      setIsListening(false);
+      return;
+    }
+
+    // Close all windows
+    if (command.includes('close all windows') || command.includes('close all')) {
+      windows.forEach((window) => {
+        minimizeWindow(window.id);
+      });
+      setIsExpanded(false);
+      setIsListening(false);
+      return;
+    }
+
+    // Turn on Dark Mode / Turn off Dark Mode
+    if (command.includes('turn on dark mode') || command.includes('enable dark mode')) {
+      setTheme('dark');
+      setIsExpanded(false);
+      setIsListening(false);
+      return;
+    }
+
+    if (command.includes('turn off dark mode') || command.includes('disable dark mode') || command.includes('turn on light mode')) {
+      setTheme('light');
+      setIsExpanded(false);
+      setIsListening(false);
+      return;
+    }
+
+    // Command not recognized
+    setIsError(true);
+    setTimeout(() => setIsError(false), 2000);
+  }, [windows, addWindow, minimizeWindow, setTheme]);
+
   // Initialize Speech Recognition
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -132,7 +181,7 @@ export default function AIAssistantOrb() {
         recognitionRef.current.abort();
       }
     };
-  }, [isListening]);
+  }, [isListening, handleVoiceCommand]);
 
   // Initialize Audio Context for volume detection
   useEffect(() => {
@@ -206,55 +255,6 @@ export default function AIAssistantOrb() {
     };
   }, [isListening, isExpanded]);
 
-  const handleVoiceCommand = (command: string) => {
-    console.log('Voice command received:', command);
-
-    // Open Safari
-    if (command.includes('open safari')) {
-      const safariExists = windows.some((w) => w.id === 'safari');
-      if (!safariExists) {
-        addWindow({
-          id: 'safari',
-          title: 'Safari',
-          position: { x: 100, y: 100 },
-          size: { width: 1200, height: 800 },
-        });
-      }
-      setIsExpanded(false);
-      setIsListening(false);
-      return;
-    }
-
-    // Close all windows
-    if (command.includes('close all windows') || command.includes('close all')) {
-      windows.forEach((window) => {
-        minimizeWindow(window.id);
-      });
-      setIsExpanded(false);
-      setIsListening(false);
-      return;
-    }
-
-    // Turn on Dark Mode / Turn off Dark Mode
-    if (command.includes('turn on dark mode') || command.includes('enable dark mode')) {
-      setTheme('dark');
-      setIsExpanded(false);
-      setIsListening(false);
-      return;
-    }
-
-    if (command.includes('turn off dark mode') || command.includes('disable dark mode') || command.includes('turn on light mode')) {
-      setTheme('light');
-      setIsExpanded(false);
-      setIsListening(false);
-      return;
-    }
-
-    // Command not recognized
-    setIsError(true);
-    setTimeout(() => setIsError(false), 2000);
-  };
-
   const handleClick = () => {
     if (isDragging) return;
 
@@ -289,17 +289,17 @@ export default function AIAssistantOrb() {
     setIsDragging(true);
   };
 
-  const handleMouseMove = (e: MouseEvent) => {
+  const handleMouseMove = useCallback((e: MouseEvent) => {
     if (!isDragging) return;
     setPosition({
       x: e.clientX - dragOffset.x,
       y: e.clientY - dragOffset.y,
     });
-  };
+  }, [isDragging, dragOffset]);
 
-  const handleMouseUp = () => {
+  const handleMouseUp = useCallback(() => {
     setIsDragging(false);
-  };
+  }, []);
 
   useEffect(() => {
     if (isDragging) {
@@ -310,7 +310,7 @@ export default function AIAssistantOrb() {
         window.removeEventListener('mouseup', handleMouseUp);
       };
     }
-  }, [isDragging, dragOffset]);
+  }, [isDragging, dragOffset, handleMouseMove, handleMouseUp]);
 
   // Calculate pulse scale based on audio level
   const pulseScale = isExpanded && isListening ? 1 + audioLevel * 0.3 : 1;

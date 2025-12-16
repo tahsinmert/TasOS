@@ -61,7 +61,7 @@ export default function BeatMaker({ onClose }: BeatMakerProps) {
       const players: { [key: string]: Tone.Player } = {};
       for (const [name, url] of Object.entries(DRUM_SAMPLES)) {
         players[name] = new Tone.Player(url).toDestination();
-        await players[name].load();
+        await players[name].load(url);
       }
       playersRef.current = players;
 

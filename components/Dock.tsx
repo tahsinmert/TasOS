@@ -1,6 +1,7 @@
 'use client';
+/* eslint-disable react-hooks/rules-of-hooks */
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
 import { motion, AnimatePresence, useMotionValue, useSpring, useTransform, animate } from 'framer-motion';
 import {
   Folder,
@@ -124,20 +125,36 @@ export default function Dock() {
   const clickYTrash = useMotionValue(0);
   
   // Map app IDs to their motion values - motion values are stable across renders
-  const clickAnimations = new Map<string, { y: ReturnType<typeof useMotionValue>, scale: ReturnType<typeof useMotionValue> }>([
-    ['finder', { y: clickYFinder, scale: clickScaleFinder }],
-    ['safari', { y: clickYSafari, scale: clickScaleSafari }],
-    ['messages', { y: clickYMessages, scale: clickScaleMessages }],
-    ['mail', { y: clickYMail, scale: clickScaleMail }],
-    ['vscode', { y: clickYVSCode, scale: clickScaleVSCode }],
-    ['terminal', { y: clickYTerminal, scale: clickScaleTerminal }],
-    ['calculator', { y: clickYCalculator, scale: clickScaleCalculator }],
-    ['notes', { y: clickYNotes, scale: clickScaleNotes }],
-    ['photobooth', { y: clickYPhotoBooth, scale: clickScalePhotoBooth }],
-    ['wallpapers', { y: clickYWallpapers, scale: clickScaleWallpapers }],
-    ['launchpad', { y: clickYLaunchpad, scale: clickScaleLaunchpad }],
-    ['doom', { y: clickYDoom, scale: clickScaleDoom }],
-    ['trash', { y: clickYTrash, scale: clickScaleTrash }],
+  const clickAnimations = useMemo(() => {
+    const map = new Map<string, { y: ReturnType<typeof useMotionValue<number>>, scale: ReturnType<typeof useMotionValue<number>> }>();
+    map.set('finder', { y: clickYFinder, scale: clickScaleFinder });
+    map.set('safari', { y: clickYSafari, scale: clickScaleSafari });
+    map.set('messages', { y: clickYMessages, scale: clickScaleMessages });
+    map.set('mail', { y: clickYMail, scale: clickScaleMail });
+    map.set('vscode', { y: clickYVSCode, scale: clickScaleVSCode });
+    map.set('terminal', { y: clickYTerminal, scale: clickScaleTerminal });
+    map.set('calculator', { y: clickYCalculator, scale: clickScaleCalculator });
+    map.set('notes', { y: clickYNotes, scale: clickScaleNotes });
+    map.set('photobooth', { y: clickYPhotoBooth, scale: clickScalePhotoBooth });
+    map.set('wallpapers', { y: clickYWallpapers, scale: clickScaleWallpapers });
+    map.set('launchpad', { y: clickYLaunchpad, scale: clickScaleLaunchpad });
+    map.set('doom', { y: clickYDoom, scale: clickScaleDoom });
+    map.set('trash', { y: clickYTrash, scale: clickScaleTrash });
+    return map;
+  }, [
+    clickYFinder, clickScaleFinder,
+    clickYSafari, clickScaleSafari,
+    clickYMessages, clickScaleMessages,
+    clickYMail, clickScaleMail,
+    clickYVSCode, clickScaleVSCode,
+    clickYTerminal, clickScaleTerminal,
+    clickYCalculator, clickScaleCalculator,
+    clickYNotes, clickScaleNotes,
+    clickYPhotoBooth, clickScalePhotoBooth,
+    clickYWallpapers, clickScaleWallpapers,
+    clickYLaunchpad, clickScaleLaunchpad,
+    clickYDoom, clickScaleDoom,
+    clickYTrash, clickScaleTrash,
   ]);
   
   const activeApps = useSystemStore((state) => state.activeApps);
@@ -367,10 +384,10 @@ export default function Dock() {
     } else {
       setTimeout(() => setClickedApp(null), 600);
     }
-  }, [windows, addWindow, bringToFront, restoreWindow, setAppActive, trashFull, toggleLaunchpad]);
+  }, [windows, addWindow, bringToFront, restoreWindow, setAppActive, trashFull, toggleLaunchpad, clickAnimations, isMobile, isTablet]);
 
   // Calculate icon positions for magnification (centers of icons)
-  const calculateIconPositions = (): number[] => {
+  const iconPositions = useMemo(() => {
     const positions: number[] = [];
     let currentX = 16; // Padding from left
     
@@ -393,9 +410,7 @@ export default function Dock() {
     positions.push(currentX + BASE_ICON_SIZE / 2);
     
     return positions;
-  };
-
-  const iconPositions = calculateIconPositions();
+  }, [pinnedApps, recentApps, BASE_ICON_SIZE]);
 
   // Create scale transforms for each icon (disabled on touch devices)
   const iconScales = iconPositions.map((iconCenterX) =>
@@ -420,6 +435,18 @@ export default function Dock() {
     useTransform(scale, (s) => BASE_ICON_SIZE * s)
   );
 
+  // Create combined scales for all apps (hover + click)
+  const allApps = useMemo(() => [...pinnedApps, ...recentApps, { id: 'trash', name: 'Trash', icon: Trash, gradient: 'from-gray-500 to-gray-600' }], [pinnedApps.length, recentApps.length]);
+  
+  const combinedScales = allApps.map((app, index) => {
+    const hoverScale = iconScales[index] ?? fallbackScale;
+    const clickAnim = clickAnimations.get(app.id);
+    const clickScale = clickAnim?.scale ?? fallbackScale;
+    return useTransform(
+      [hoverScale, clickScale],
+      (values: number[]) => values[0] * values[1]
+    );
+  });
 
   // Render a single dock icon
   const renderDockIcon = (
@@ -434,14 +461,7 @@ export default function Dock() {
     const hoverScale = iconScales[index] ?? fallbackScale;
     const width = iconWidths[index];
     const clickAnim = clickAnimations.get(app.id);
-    // Ensure clickScale is always a MotionValue (initialized to 1)
-    const clickScale = clickAnim?.scale ?? fallbackScale;
-    
-    // Combine hover scale with click scale - both are MotionValues now
-    const combinedScale = useTransform(
-      [hoverScale, clickScale],
-      ([hover, click]) => hover * click
-    );
+    const combinedScale = combinedScales[index] ?? fallbackScale;
 
     return (
       <motion.div

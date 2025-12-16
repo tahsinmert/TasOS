@@ -115,7 +115,7 @@ export default function Desktop() {
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [spotlightOpen, toggleFullscreen, isFullscreen, showToast]);
+  }, [spotlightOpen, setSpotlightOpen, toggleFullscreen, isFullscreen, showToast]);
 
   const handleSelectApp = (appId: string) => {
     setAppActive(appId, true);
@@ -268,10 +268,6 @@ export default function Desktop() {
     }, 300);
   };
 
-  if (showBootup) {
-    return <Bootup onComplete={handleBootupComplete} />;
-  }
-
   // Enable fluid if not in low power mode and FPS is acceptable (>= 30) or not yet measured (fps === 60 default)
   const fluidEnabled = !lowPowerMode && (fps >= 30 || fps === 60);
 
@@ -285,6 +281,10 @@ export default function Desktop() {
   const handleWindowDrag = useCallback((x: number, y: number) => {
     // Window drag will be handled by FluidBackground component
   }, []);
+
+  if (showBootup) {
+    return <Bootup onComplete={handleBootupComplete} />;
+  }
 
   return (
     <div
