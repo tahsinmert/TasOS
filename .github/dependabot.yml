@@ -1,0 +1,9 @@
+version: 2
+updates:
+  # npm bağımlılıklarını güncelle
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 10
+
